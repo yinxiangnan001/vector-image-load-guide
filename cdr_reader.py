@@ -47,8 +47,8 @@ def load_cdr_basic(input_cdr)->Image.Image:
 def load_cdr(input_cdr, min_size_ratio=0.05, debug=False):
     """
     有的 CDR 文件中包含多个 logo, 此函数可以从 CDR 文件中提取独立的 logo.
-    策略：如果一个对象的子元素互不重叠, 则子元素是独立 logo, 递归拆分;
-    如果子元素有重叠，则它们是同一个 logo 的组成部分, 保留父对象整体导出.
+    策略：如果一个 root 对象的子元素互不重叠, 则子元素是独立 logo, 需要拆分;
+    如果 root 对象的子元素有重叠，则它们是同一个 logo 的组成部分, 保留 root 对象整体导出.
 
     Args:
         input_cdr: CDR 文件路径
@@ -146,7 +146,7 @@ def load_cdr(input_cdr, min_size_ratio=0.05, debug=False):
                     print(f"[split_cdr] 去重: bbox={bbox_key}, 移除无子元素的 {[oid for oid in no_children]}")
         roots = [oid for oid in roots if oid not in dedup_removed]
 
-        # --- 第四步：递归拆分容器组 ---
+        # --- 第四步：拆分容器组 ---
         def children_no_overlap(obj_id):
             """判断 obj_id 的直接子元素是否互不重叠"""
             kids = children_of[obj_id]
@@ -166,7 +166,7 @@ def load_cdr(input_cdr, min_size_ratio=0.05, debug=False):
             return True
 
         def collect_logos(root_id):
-            """如果子元素互不重叠则拆分，否则作为独立 logo 保留"""
+            """如果 root 对象的子元素互不重叠则拆分，否则作为独立 logo 保留"""
             if children_of[root_id] and children_no_overlap(root_id):
                 if debug:
                     print(f"[split_cdr] 容器组: {root_id}, 子元素互不重叠, 拆分为 {len(children_of[root_id])} 个子对象")
