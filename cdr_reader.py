@@ -217,6 +217,9 @@ def load_cdr(input_cdr, min_size_ratio=0.05, debug=False):
     
     
 if __name__ == "__main__":
+    import os 
+    
+    os.makedirs('outputs', exist_ok=True)
     img = load_cdr('test_files/sample_cdr_multiple.cdr', debug=True)
     for idx, (obj_id, logo) in enumerate(img.items()):
         logo.save(f'outputs/sample_cdr_{idx+1}_{obj_id}.png')
