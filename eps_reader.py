@@ -36,7 +36,7 @@ showpage
 def find_unused_color_for_eps(eps_path):
     """
     分析 EPS 渲染图，寻找一个绝对不存在的颜色作为“安全背景色”
-    返回: (rgb_str, cmyk_str, rgb_tuple)
+    返回: (rgb_str, cmyk_str, rgb_tuple, cmyk_reverse_rgb_tuple)
     """
     # 1. 快速低清渲染采样 (scale=1 即可，主要为了统计颜色)
     img = Image.open(eps_path)
@@ -73,6 +73,10 @@ def find_unused_color_for_eps(eps_path):
         m = (1 - g - k) / (1 - k)
         y = (1 - b - k) / (1 - k)
     cmyk_str = f"{c:.2f} {m:.2f} {y:.2f} {k:.2f} k"
+    
+    # 4. 计算 CMYK 反向转换的 RGB, 
+    # CMYK 用 Ghostscript 渲染后实际的 RGB 颜色和初始的 RGB 大概率不一致 (RGB->CMYK->RGB 会有偏差),
+    # 需要实际渲染一次来获取准确的 RGB 颜色用于后续的像素筛选.
     cmyk_reverse_rgb = cmyk_ghostscript_rgb(cmyk_str)
     return rgb_str, cmyk_str, safe_rgb, cmyk_reverse_rgb
 
