@@ -1,46 +1,48 @@
 # vector-image-load-guide
 
-矢量图读取与处理工具箱，源于批量处理各种来源的 logo 矢量素材的实战经验。
+<p align="right"><a href="./README_zh.md">🇨🇳 中文</a></p>
 
-覆盖 SVG、PDF、AI、EPS、CDR 等常见矢量格式，针对每种格式选择了最合适的读取方案，并提供了去背景、色块分割等实用的后处理工具。
+A toolkit for reading and processing vector images, born from hands-on experience batch-processing logo vector assets from various sources.
 
-## 格式支持与推荐方案
+Covers common vector formats including SVG, PDF, AI, EPS, and CDR. Each format is paired with the most suitable reading approach, along with practical post-processing tools like background removal and color block segmentation.
 
-| 格式 | 推荐方案 | 文件 | 说明 |
-|------|---------|------|------|
-| SVG | cairosvg | `cariosvg_reader.py` | 原生支持透明背景，简单高效 |
-| PDF / AI / SVG | PyMuPDF (fitz) | `fitz_reader.py` | 支持透明背景，自动裁剪前景区域，渲染质量好 |
-| CDR | Inkscape CLI | `cdr_reader.py` | CDR 是闭源格式，只能借助 Inkscape 转换；支持从多 logo 的 CDR 中自动拆分独立 logo |
-| EPS | Pillow + PostScript 注入 | `eps_reader.py` | EPS 不支持透明背景，通过注入安全背景色再抠除的方式实现透明化 |
-| AI / 其他 | ImageMagick (wand) | `wand_reader.py` | 备选方案，不支持透明背景，适合 fitz 打不开时兜底 |
+## Format Support & Recommended Approaches
 
-> Inkscape CLI 也能读取 AI、SVG、PDF，但因为是外部进程调用，速度较慢，建议优先用 fitz 或 cairosvg。
+| Format | Recommended Approach | File | Notes |
+|--------|---------------------|------|-------|
+| SVG | cairosvg | `cariosvg_reader.py` | Native transparent background support, simple and efficient |
+| PDF / AI / SVG | PyMuPDF (fitz) | `fitz_reader.py` | Transparent background support, auto-crops foreground area, good rendering quality |
+| CDR | Inkscape CLI | `cdr_reader.py` | CDR is a proprietary format, requires Inkscape for conversion; supports auto-splitting individual logos from multi-logo CDR files |
+| EPS | Pillow + PostScript injection | `eps_reader.py` | EPS doesn't support transparent backgrounds; achieves transparency by injecting a safe background color then removing it |
+| AI / Other | ImageMagick (wand) | `wand_reader.py` | Fallback option, no transparent background support, useful when fitz can't open the file |
 
-## 亮点
+> Inkscape CLI can also read AI, SVG, and PDF, but it's slower due to external process calls. Prefer fitz or cairosvg when possible.
 
-- **CDR 多 logo 自动拆分**（`cdr_reader.py` → `load_cdr`）：通过 Inkscape `--query-all` 解析对象树，根据子元素是否重叠判断是独立 logo 还是组合元素，递归拆分并逐个导出
-- **EPS 透明背景方案**（`eps_reader.py`）：自动寻找图中不存在的"安全色"，替换 EPS 源码中的背景色定义，渲染后用颜色距离抠除背景，绕过 EPS 不支持透明通道的限制
-- **fitz 前景自适应缩放**（`fitz_reader.py` → `load_fitz`）：先低分辨率渲染找前景包围盒，再按前景实际尺寸计算 zoom，避免小 logo 在大画布上渲染后分辨率不足
+## Highlights
 
-## 后处理工具 (`seg_utils/`)
+- **CDR multi-logo auto-splitting** (`cdr_reader.py` → `load_cdr`): Parses the object tree via Inkscape `--query-all`, determines whether child elements are independent logos or composite elements based on overlap detection, then recursively splits and exports each one
+- **EPS transparent background workaround** (`eps_reader.py`): Automatically finds a "safe color" not present in the image, replaces the background color definition in the EPS source code, renders it, then removes the background using color distance — bypassing EPS's lack of alpha channel support
+- **fitz adaptive foreground scaling** (`fitz_reader.py` → `load_fitz`): First renders at low resolution to find the foreground bounding box, then calculates zoom based on actual foreground size, preventing small logos on large canvases from being rendered at insufficient resolution
 
-| 文件 | 功能 |
-|------|------|
-| `color_filter.py` | 去背景工具集：HSV 去黑/白背景、四角取色去背景（floodFill 防止误伤前景同色区域） |
-| `process_color_block.py` | 色块拼图分割：处理多个 logo 拼在同一张彩色色块图上的情况，按颜色直方图 + 连通域自动拆分 |
+## Post-processing Tools (`seg_utils/`)
 
-## 依赖安装
+| File | Functionality |
+|------|--------------|
+| `color_filter.py` | Background removal toolkit: HSV-based black/white background removal, four-corner color sampling removal (floodFill prevents accidentally removing same-colored foreground regions) |
+| `process_color_block.py` | Color block mosaic segmentation: handles cases where multiple logos are placed on colored blocks in a single image, auto-splits using color histogram + connected components |
+
+## Installation
 
 ```bash
-# Python 库
+# Python packages
 pip install PyMuPDF cairosvg Wand Pillow numpy opencv-python scikit-image
 
-# 系统依赖
-brew install inkscape        # CDR 读取必需，也可从官网下载安装
-brew install imagemagick      # wand_reader 必需
+# System dependencies
+brew install inkscape        # Required for CDR reading, or download from official website
+brew install imagemagick      # Required for wand_reader
 ```
 
-> wand 如果报 `MagickWand shared library not found`，需要在终端先执行：
+> If wand reports `MagickWand shared library not found`, run this in your terminal first:
 > ```bash
 > export MAGICK_HOME=$(brew --prefix imagemagick)
 > ```
