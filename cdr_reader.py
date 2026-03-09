@@ -146,6 +146,14 @@ def load_cdr(input_cdr, min_size_ratio=0.05, debug=False):
                     print(f"[split_cdr] 去重: bbox={bbox_key}, 移除无子元素的 {[oid for oid in no_children]}")
         roots = [oid for oid in roots if oid not in dedup_removed]
 
+        # --- 有的 root 并不是直接 root, 而是只包含了一个元素, 该元素直接子元素有很多 logo, 此时要把它的子元素提升为 root ---
+        real_roots = [] 
+        for root_id in roots:
+            while len(children_of[root_id]) == 1:
+                root_id = children_of[root_id][0]
+            real_roots.append(root_id)
+            
+        roots = real_roots
         # --- 去除 root 中重叠的子元素 --- 
         def remove_duplicate_children(obj_id):
             """如果 obj_id 的子元素中有重叠的，则保留一个，去掉其他重复的"""
@@ -249,7 +257,7 @@ if __name__ == "__main__":
     import os 
     
     os.makedirs('outputs', exist_ok=True)
-    img = load_cdr('vector_logo/经典矢量LOGO/CDR/001.cdr', debug=True)
+    img = load_cdr('test_files/sample_cdr_multiple.cdr', debug=True)
     for idx, (obj_id, logo) in enumerate(img.items()):
         logo.save(f'outputs/sample_cdr_{idx+1}_{obj_id}.png')
         
