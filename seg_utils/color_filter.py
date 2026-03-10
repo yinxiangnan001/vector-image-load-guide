@@ -37,7 +37,13 @@ def remove_white_bg_hsv(img:Image.Image, sensitivity=30, expand_pixels=1):
 def remove_4corner_bg(img:Image.Image, sensitivity=30, expand_pixels=1, edge_bg=True)->Image.Image:
     img = np.array(img.convert('RGB')) 
     h, w = img.shape[:2] 
-    corners = img[[0, 0, h-1, h-1], [0, w-1, 0, w-1]]
+    #corners = img[[0, 0, h-1, h-1], [0, w-1, 0, w-1]] # 可能有边框，改为取 4 个角落 3x3 区域的中位数颜色
+    corners = np.concatenate([
+        img[0:3, 0:3].reshape(-1, 3),
+        img[0:3, -3:].reshape(-1, 3),
+        img[-3:, 0:3].reshape(-1, 3),
+        img[-3:, -3:].reshape(-1, 3)
+    ], axis=0)
     bg_color = np.median(corners, axis=0)
     dist = np.sqrt(np.sum((img - bg_color) ** 2, axis=2))
     bg_mask = dist < sensitivity
